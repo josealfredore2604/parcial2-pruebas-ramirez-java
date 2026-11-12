@@ -1,4 +1,7 @@
+# Carpeta de salida de Maven: clases compiladas, reportes de Surefire y de JaCoCo
+# (target/jacoco.exec y target/site/jacoco). Se regenera con cada build.
 target/
+# Archivos propios del sistema operativo y de los editores o IDE.
 .DS_Store
 .idea/
 .vscode/

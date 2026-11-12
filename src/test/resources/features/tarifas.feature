@@ -1,19 +1,27 @@
 # language: es
+# Escenarios de aceptación del cobro del parqueadero, escritos para el dueño.
+# La primera línea indica que las palabras clave están en español.
+# Cada paso (Dado / Cuando / Entonces) se ejecuta con código real en los archivos
+# de pasos; si el comportamiento cambia, el escenario correspondiente falla.
 Característica: Cobro del parqueadero EstacionaYa
   Como dueño del parqueadero
   quiero que cada vehículo pague según el tiempo que estuvo y el tipo de cliente
   para cobrar de forma justa y predecible.
 
+  # Un esquema es una plantilla: se ejecuta una vez por cada fila de las tablas de
+  # Ejemplos, reemplazando <vehiculo>, <minutos> y <valor> por los datos de la fila.
   Esquema del escenario: Cobro de una estadía según el tipo de vehículo y el tiempo
     Dado un <vehiculo> que permaneció <minutos> minutos en el parqueadero
     Cuando se calcula el valor a pagar
     Entonces el valor a pagar es <valor> pesos
 
+    # Regla de gracia: 15 minutos es el último minuto gratis.
     Ejemplos: Los primeros 15 minutos son gratis
       | vehiculo | minutos | valor |
       | carro    | 15      | 0     |
       | moto     | 15      | 0     |
 
+    # Regla de fracción: el minuto 16 ya cobra una hora y el 61 cobra dos.
     Ejemplos: Pasada la gracia se cobra cada hora o fracción de hora
       | vehiculo | minutos | valor |
       | carro    | 16      | 3000  |
@@ -23,6 +31,7 @@ Característica: Cobro del parqueadero EstacionaYa
       | moto     | 60      | 1500  |
       | moto     | 61      | 3000  |
 
+    # Regla de tope: el carro llega a 25000 y la moto a 12000, y no pasan de ahí.
     Ejemplos: Nadie paga más del tope diario
       | vehiculo | minutos | valor |
       | carro    | 480     | 24000 |
@@ -32,6 +41,7 @@ Característica: Cobro del parqueadero EstacionaYa
       | moto     | 481     | 12000 |
       | moto     | 1440    | 12000 |
 
+  # Descuentos por tipo de cliente: ninguno 0 %, frecuente 10 % y convenio 20 %.
   Escenario: Un cliente frecuente recibe diez por ciento de descuento
     Dado un valor a pagar de 3000 pesos
     Cuando se aplica el descuento de un cliente frecuente
@@ -52,6 +62,7 @@ Característica: Cobro del parqueadero EstacionaYa
     Cuando se aplica el descuento de un cliente frecuente
     Entonces el cliente paga 1799 pesos
 
+  # Casos de rechazo: el sistema explica por qué no puede cobrar o descontar.
   Escenario: Un vehículo que no es carro ni moto no se puede cobrar
     Dado un bicicleta que permaneció 30 minutos en el parqueadero
     Cuando se intenta calcular el valor a pagar

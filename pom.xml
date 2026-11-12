@@ -1,4 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  pom.xml (Project Object Model): archivo de configuración de Maven. Define qué
+  dependencias usa el proyecto, qué plugins participan en la construcción y con
+  qué versiones. Los valores del parcial (umbral de cobertura, reglas de Checkstyle)
+  no se modifican: este archivo solo los documenta.
+
+  CICLO DE VIDA DE MAVEN (de dónde sale "verify")
+  Maven ejecuta una secuencia fija de fases. Al pedir una fase, se ejecutan también
+  todas las anteriores. Las principales, en orden:
+
+    validate, compile, test, package, verify, install, deploy
+
+  - compile: compila src/main/java.
+  - test: compila src/test/java y corre las pruebas con el plugin Surefire.
+  - package: empaqueta el .jar.
+  - verify: comprueba que el resultado cumple los criterios de calidad.
+  - Las fases solo organizan el trabajo; el trabajo real lo hacen los goals de los
+    plugins, que se enganchan (se enlazan) a una fase.
+
+  Por eso "mvn verify" ejecuta todas las pruebas (unitarias y BDD) y además los
+  goals de JaCoCo enlazados a test y verify. "mvn test" llega hasta test y nunca
+  evalúa el mínimo de cobertura, porque esa comprobación vive en verify.
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -16,17 +39,25 @@
         <relativePath/>
     </parent>
 
+    <!-- Identidad del proyecto: grupo, nombre y versión del artefacto que se construye. -->
     <groupId>curso.pruebas</groupId>
     <artifactId>parcial-parqueadero</artifactId>
     <version>1.0.0</version>
 
+    <!-- Propiedades reutilizables: se referencian más abajo con la sintaxis ${nombre}. -->
     <properties>
+        <!-- Nivel de Java con el que compila el plugin del compilador. -->
         <java.version>21</java.version>
         <cucumber.version>7.34.6</cucumber.version>
         <checkstyle.version>13.3.0</checkstyle.version>
         <jacoco.version>0.8.14</jacoco.version>
     </properties>
 
+    <!--
+      dependencyManagement solo fija versiones; no agrega dependencias por sí mismo.
+      El BOM (Bill of Materials) de Cucumber trae las versiones alineadas de todos
+      sus módulos, así que abajo se declaran sin número de versión.
+    -->
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -39,22 +70,27 @@
         </dependencies>
     </dependencyManagement>
 
+    <!-- Todas las dependencias son de alcance "test": no viajan con el código de producción. -->
     <dependencies>
+        <!-- JUnit 5: anotaciones (@Test, @ParameterizedTest) y aserciones (assertEquals...). -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Permite declarar una "suite" de JUnit (@Suite), que es como RunCucumberTest arranca Cucumber. -->
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-suite</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- API de Cucumber para escribir pasos: @Dado, @Cuando, @Entonces (paquete io.cucumber.java.es). -->
         <dependency>
             <groupId>io.cucumber</groupId>
             <artifactId>cucumber-java</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Motor que registra Cucumber dentro de JUnit Platform para que Surefire lo ejecute. -->
         <dependency>
             <groupId>io.cucumber</groupId>
             <artifactId>cucumber-junit-platform-engine</artifactId>
@@ -64,7 +100,15 @@
 
     <build>
         <plugins>
-            <!-- Análisis estático: mvn checkstyle:check. Reglas en config/checkstyle.xml. -->
+            <!--
+              Análisis estático con Checkstyle.
+              No está enlazado a ninguna fase: solo corre cuando se invoca de forma explícita
+              con "mvn checkstyle:check" (prefijo del plugin : goal). El goal lee las reglas de
+              config/checkstyle.xml, revisa el código fuente (y el de pruebas, por
+              includeTestSourceDirectory) y falla el build si encuentra alguna infracción.
+              violationSeverity=warning hace que incluso las advertencias cuenten como fallo.
+              El bloque "dependencies" interno fija la versión del motor Checkstyle que usa el plugin.
+            -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
@@ -89,12 +133,35 @@
               Cobertura con JaCoCo: prepare-agent mide mientras corren las pruebas, report genera
               target/site/jacoco/index.html y check hace fallar mvn verify si las líneas o las
               ramas cubiertas bajan de 90 %.
+
+              CÓMO FUNCIONA JACOCO POR DENTRO
+              1. prepare-agent (por defecto en la fase initialize, la primera): no mide nada
+                 todavía. Solo calcula una opción de la JVM, -javaagent:org.jacoco.agent...jar,
+                 y la guarda en la propiedad "argLine" de Maven.
+              2. Surefire, el plugin que corre las pruebas en la fase test, lee "argLine" y la
+                 pasa a la JVM nueva que lanza para ejecutarlas. Esa es la conexión entre
+                 JaCoCo y Surefire: no hay código de enlace, solo esa propiedad compartida.
+              3. Un agente Java (-javaagent) se carga antes que el programa y puede modificar
+                 las clases al cargarlas. El agente de JaCoCo inserta en el bytecode sondas
+                 (probes) que marcan qué líneas, métodos y ramas se ejecutan.
+              4. Cuando termina la JVM de pruebas, el agente vuelca lo registrado en el archivo
+                 binario target/jacoco.exec.
+              5. report (fase test, enlazado aquí de forma explícita después de Surefire) lee
+                 jacoco.exec y las clases compiladas, y genera el informe HTML en
+                 target/site/jacoco/index.html (también XML y CSV).
+              6. check (fase verify por defecto, la que sigue a package) vuelve a leer
+                 jacoco.exec y compara los porcentajes con las reglas de abajo. Si alguna se
+                 incumple, termina en BUILD FAILURE. Por eso "mvn verify" valida la cobertura
+                 y "mvn test" no.
+              Alcance: solo se mide el código de src/main, porque jacoco.exec cubre las clases
+              cargadas desde target/classes; las pruebas no cuentan en el porcentaje.
             -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco.version}</version>
                 <executions>
+                    <!-- Cada "execution" enlaza un goal a una fase; el id solo sirve para identificarla. -->
                     <execution>
                         <id>preparar-agente</id>
                         <goals>
@@ -114,6 +181,12 @@
                             <goal>check</goal>
                         </goals>
                         <configuration>
+                            <!--
+                              Regla de calidad. BUNDLE evalúa todo el proyecto junto (otras opciones
+                              son PACKAGE o CLASS). COVEREDRATIO es la fracción cubierta (0.90 = 90 %).
+                              LINE cuenta líneas ejecutadas; BRANCH cuenta cada lado de un if o
+                              de un operador condicional.
+                            -->
                             <rules>
                                 <rule>
                                     <element>BUNDLE</element>

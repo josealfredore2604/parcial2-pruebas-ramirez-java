@@ -2,24 +2,46 @@
 <!DOCTYPE module PUBLIC
         "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
         "https://checkstyle.org/dtds/configuration_1_3.dtd">
-<!-- Reglas de análisis estático: código sobrante, llaves, nombres y complejidad. -->
+<!--
+  Reglas de análisis estático: código sobrante, llaves, nombres y complejidad.
+
+  Lo usa el plugin maven-checkstyle-plugin (ver pom.xml) al ejecutar "mvn checkstyle:check".
+  Checkstyle lee cada archivo .java, construye su árbol sintáctico y aplica los módulos
+  de abajo. No ejecuta el código ni compila: solo lo inspecciona. Estas reglas no se
+  modifican en el parcial; aquí solo se documentan.
+-->
 <module name="Checker">
     <property name="charset" value="UTF-8"/>
+    <!-- Toda infracción se reporta como error y hace fallar el build. -->
     <property name="severity" value="error"/>
+    <!-- Prohíbe tabuladores; el código se indenta con espacios. -->
     <module name="FileTabCharacter"/>
+    <!-- TreeWalker recorre el árbol sintáctico de cada clase y aplica las reglas que siguen. -->
     <module name="TreeWalker">
+        <!-- Imports que no se usan o que están repetidos (código sobrante). -->
         <module name="UnusedImports"/>
         <module name="RedundantImport"/>
+        <!-- Variables locales que se declaran y nunca se leen. -->
         <module name="UnusedLocalVariable"/>
+        <!-- Bloques vacíos {} que probablemente ocultan un olvido. -->
         <module name="EmptyBlock"/>
+        <!-- Prohíbe "import paquete.*": obliga a importar clases concretas. -->
         <module name="AvoidStarImport"/>
+        <!-- Obliga a usar llaves en if, for y while, aunque tengan una sola instrucción. -->
         <module name="NeedBraces"/>
+        <!-- Una variable por declaración: nada de "int a, b;". -->
         <module name="MultipleVariableDeclarations"/>
+        <!-- Convenciones de nombres: métodos y variables en camelCase, constantes en MAYUSCULAS, tipos en PascalCase. -->
         <module name="MethodName"/>
         <module name="LocalVariableName"/>
         <module name="ParameterName"/>
         <module name="ConstantName"/>
         <module name="TypeName"/>
+        <!--
+          Complejidad ciclomática: número de caminos independientes de un método
+          (1 más cada if, ciclo, case, && o ||). Más de 5 es una infracción, porque un
+          método con tantos caminos es difícil de leer y de probar.
+        -->
         <module name="CyclomaticComplexity">
             <property name="max" value="5"/>
         </module>
