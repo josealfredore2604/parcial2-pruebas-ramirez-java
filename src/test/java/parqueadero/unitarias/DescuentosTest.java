@@ -52,4 +52,14 @@ class DescuentosTest {
 
         assertEquals("El valor no puede ser negativo", error.getMessage());
     }
+
+    @ParameterizedTest(name = "el cliente \"{0}\" se rechaza")
+    @ValueSource(strings = {"vip", "", "Frecuente", "CONVENIO"})
+    @DisplayName("Rechaza un tipo de cliente desconocido")
+    void rechazaUnTipoDeClienteDesconocido(String tipoCliente) {
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> Descuentos.aplicarDescuento(3000, tipoCliente));
+
+        assertEquals("Tipo de cliente no válido", error.getMessage());
+    }
 }
