@@ -1,0 +1,77 @@
+# Pipeline de integración y despliegue continuos del parcial.
+# Lo entrega el docente completo: no hace falta modificarlo.
+# Cada job corre en su propia máquina virtual (runner). El despliegue,
+# que es simulado, solo corre si los cuatro jobs de verificación pasan.
+
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  analisis-estatico:
+    name: Análisis estático
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Análisis estático
+        run: mvn -B checkstyle:check
+
+  pruebas-unitarias:
+    name: Pruebas unitarias
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Pruebas unitarias
+        run: mvn -B test -Dtest='**/unitarias/*Test'
+
+  pruebas-bdd:
+    name: Pruebas BDD
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Pruebas BDD
+        run: mvn -B test -Dtest=RunCucumberTest
+
+  cobertura:
+    name: Cobertura
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Cobertura
+        run: mvn -B verify
+
+
+  despliegue:
+    name: Despliegue (simulado)
+    needs: [analisis-estatico, pruebas-unitarias, pruebas-bdd, cobertura]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Desplegar
+        run: |
+          echo "Versión: ${{ github.sha }}"
+          echo "Desplegado"
