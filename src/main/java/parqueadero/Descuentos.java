@@ -17,6 +17,9 @@ public final class Descuentos {
         if ("convenio".equals(tipoCliente)) {
             return valor * 80 / 100;
         }
-        return valor * 90 / 100;
+        if ("frecuente".equals(tipoCliente)) {
+            return valor * 90 / 100;
+        }
+        throw new IllegalArgumentException("Tipo de cliente no válido");
     }
 }
