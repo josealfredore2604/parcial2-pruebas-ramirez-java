@@ -1,37 +1,30 @@
 package parqueadero;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/** Reporte del día del parqueadero. */
 public class Reportes {
 
-    static final int tarifaCarro = 3000;
+    private static final String CARRO = "carro";
+    private static final String MOTO = "moto";
+    private static final String TOTAL_RECAUDADO = "total_recaudado";
 
+    private final CalculadoraTarifas calculadora = new CalculadoraTarifas();
+
+    /** Cuenta los carros y las motos del día y suma lo recaudado. Los tipos de vehículo son válidos. */
     public Map<String, Integer> resumen(List<Registro> registros) {
-        Map<String, Integer> r = new HashMap<>();
-        r.put("carro", 0);
-        r.put("moto", 0);
-        r.put("total_recaudado", 0);
-        int temporal = 0;
-        for (Registro reg : registros) {
-            if (reg.tipo().equals("carro")) {
-                r.put("carro", r.get("carro") + 1);
-                if (reg.minutos() > 15) {
-                    int v = (int) Math.ceil(reg.minutos() / 60.0) * tarifaCarro;
-                    if (v > 25000) v = 25000;
-                    r.put("total_recaudado", r.get("total_recaudado") + v);
-                }
-            } else if (reg.tipo().equals("moto")) {
-                r.put("moto", r.get("moto") + 1);
-                if (reg.minutos() > 15) {
-                    int v = (int) Math.ceil(reg.minutos() / 60.0) * 1500;
-                    if (v > 12000) v = 12000;
-                    r.put("total_recaudado", r.get("total_recaudado") + v);
-                }
-            }
+        Map<String, Integer> reporte = new HashMap<>();
+        reporte.put(CARRO, 0);
+        reporte.put(MOTO, 0);
+        reporte.put(TOTAL_RECAUDADO, 0);
+
+        for (Registro registro : registros) {
+            int valorAPagar = calculadora.calcularTarifa(registro.minutos(), registro.tipo());
+            reporte.merge(registro.tipo(), 1, Integer::sum);
+            reporte.merge(TOTAL_RECAUDADO, valorAPagar, Integer::sum);
         }
-        return r;
+        return reporte;
     }
 }
