@@ -27,4 +27,10 @@ class DescuentosTest {
     void clienteSinTipoEspecialNoRecibeDescuento() {
         assertEquals(3000, Descuentos.aplicarDescuento(3000, "ninguno"));
     }
+
+    @Test
+    @DisplayName("El descuento se redondea hacia abajo al peso entero")
+    void descuentoSeRedondeaHaciaAbajoAlPesoEntero() {
+        assertEquals(1799, Descuentos.aplicarDescuento(1999, "frecuente"));
+    }
 }
