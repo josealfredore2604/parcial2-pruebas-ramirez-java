@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import parqueadero.Descuentos;
 
@@ -32,5 +34,12 @@ class DescuentosTest {
     @DisplayName("El descuento se redondea hacia abajo al peso entero")
     void descuentoSeRedondeaHaciaAbajoAlPesoEntero() {
         assertEquals(1799, Descuentos.aplicarDescuento(1999, "frecuente"));
+    }
+
+    @ParameterizedTest(name = "cero con cliente {0} sigue siendo cero")
+    @ValueSource(strings = {"ninguno", "frecuente", "convenio"})
+    @DisplayName("Un valor de cero sigue siendo cero")
+    void valorDeCeroSigueSiendoCero(String tipoCliente) {
+        assertEquals(0, Descuentos.aplicarDescuento(0, tipoCliente));
     }
 }
