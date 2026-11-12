@@ -1,6 +1,7 @@
 package parqueadero.unitarias;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,5 +42,14 @@ class DescuentosTest {
     @DisplayName("Un valor de cero sigue siendo cero")
     void valorDeCeroSigueSiendoCero(String tipoCliente) {
         assertEquals(0, Descuentos.aplicarDescuento(0, tipoCliente));
+    }
+
+    @Test
+    @DisplayName("Rechaza un valor negativo")
+    void rechazaUnValorNegativo() {
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> Descuentos.aplicarDescuento(-1, "frecuente"));
+
+        assertEquals("El valor no puede ser negativo", error.getMessage());
     }
 }
